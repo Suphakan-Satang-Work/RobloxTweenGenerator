@@ -1,5 +1,5 @@
 
-# Welcome to TweenService Generater! 🏗️
+# Welcome to TweenService Generator! 🏗️
 
 >  introduction  This Project Make by **[Claude Ai](https://claude.ai/new)**
 ---
