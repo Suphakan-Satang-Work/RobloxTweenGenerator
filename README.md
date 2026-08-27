@@ -9,4 +9,4 @@
 ### Install Plugin
 
 > Open RobloxStudio and Open the plugin folder  plugin > plugin folder
-> Download Tweengenerator.lua file and drag in to plugin folde
+> Download Tweengenerator.lua file and drag in to plugin folder
