@@ -4,8 +4,9 @@
 
 ### Files
 
->  Zips
->  Tweengenerator.lua
+> Zips
+>   |----README.md
+>   |----Tweengenerator.lua
 
 ### Install Plugin
 
