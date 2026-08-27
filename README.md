@@ -12,8 +12,8 @@
 
 > 1. Open **`RobloxStudio`** 
 >  Open the plugin folder  **`plugin > plugin folder`** or
->  || *Windows: %localappdata%\Roblox\Plugins*
->  || Mac: ~/Documents/Roblox/Plugins
+> *Windows: %localappdata%\Roblox\Plugins*
+> Mac: ~/Documents/Roblox/Plugins
 >  
 > 3. Download [**`Latest Release`**](https://github.com/Suphakan-Satang-Work/RobloxTweenGenerator/releases) file 
 > Extract File and Find  **`Tweengenerator.lua`**
