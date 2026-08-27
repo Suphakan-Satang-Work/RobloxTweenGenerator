@@ -3,8 +3,9 @@
     ------------------------------------------------
     Lets you set:
       - Tween Target Type: Part (3D) or UI Element (GuiObject)
-      - Part mode:  Position / Size (Vector3) and Rotation (Orientation, degrees)
-      - UI mode:    Position / Size (UDim2, Scale + Offset) and Rotation (degrees)
+      - Start values (Position / Size / Rotation) for either a Part or a UI element
+      - Offset values added to Start to produce End - e.g. an offset of 0.5
+        means "Start + 0.5". Use a negative number (e.g. -2) to go the other way.
       - Full TweenInfo (Duration, EasingStyle, EasingDirection,
         RepeatCount, Reverses, DelayTime)
 
@@ -71,19 +72,33 @@ local function applyCorner(instance, radius)
     corner.Parent = instance
 end
 
-local function applyStroke(instance, color, thickness)
+local function applyStroke(instance, color, thickness, transparency)
     local stroke = Instance.new("UIStroke")
     stroke.Color = color or Color3.fromRGB(60, 60, 60)
     stroke.Thickness = thickness or 1
+    stroke.Transparency = transparency or 0
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     stroke.Parent = instance
 end
 
-local function applyPadding(instance, left, right)
+local function applyPadding(instance, left, right, top, bottom)
     local padding = Instance.new("UIPadding")
     padding.PaddingLeft = UDim.new(0, left or 8)
     padding.PaddingRight = UDim.new(0, right or 8)
+    padding.PaddingTop = UDim.new(0, top or 0)
+    padding.PaddingBottom = UDim.new(0, bottom or 0)
     padding.Parent = instance
+end
+
+-- Lightens a Color3 by a fixed amount per channel - used to give buttons a
+-- subtle highlighted border a shade lighter than their own fill color.
+local function lighten(color, amount)
+    amount = (amount or 25) / 255
+    return Color3.new(
+        math.clamp(color.R + amount, 0, 1),
+        math.clamp(color.G + amount, 0, 1),
+        math.clamp(color.B + amount, 0, 1)
+    )
 end
 
 -- ============================================================
@@ -98,6 +113,8 @@ scroll.ScrollBarThickness = 6
 scroll.BackgroundColor3 = Color3.fromRGB(46, 46, 46)
 scroll.BorderSizePixel = 0
 scroll.Parent = widget
+applyCorner(scroll, 8)
+applyStroke(scroll, Color3.fromRGB(30, 30, 30), 1, 0.3)
 
 local uiListLayout = Instance.new("UIListLayout")
 uiListLayout.Padding = UDim.new(0, 6)
@@ -174,6 +191,7 @@ local function addVector3Row(labelText, defX, defY, defZ, group)
         boxes[names[i]] = box
         applyStroke(box, Color3.fromRGB(70, 70, 70), 1)
         applyCorner(box, 4)
+        applyPadding(box, 4, 4)
     end
 
     if group then
@@ -222,6 +240,7 @@ local function addUDim2Row(labelText, defSX, defOX, defSY, defOY, group)
 
         applyStroke(box, Color3.fromRGB(70, 70, 70), 1)
         applyCorner(box, 4)
+        applyPadding(box, 3, 3)
     end
 
     if group then
@@ -258,7 +277,9 @@ local function makeTextField(labelText, default, group)
     box.Font = Enum.Font.SourceSans
     box.TextSize = 14
     box.Parent = frame
-    applyCorner(box,4)
+    applyCorner(box, 4)
+    applyStroke(box, Color3.fromRGB(70, 70, 70), 1)
+    applyPadding(box, 6, 6)
 
     if group then
         table.insert(group, frame)
@@ -296,7 +317,8 @@ local function makeCycleButton(labelText, options, defaultIndex, onChanged)
     button.TextSize = 14
     button.Text = options[index]
     button.Parent = frame
-    applyCorner(button,4)
+    applyCorner(button, 4)
+    applyStroke(button, Color3.fromRGB(70, 70, 70), 1)
 
     button.MouseButton1Click:Connect(function()
         index = index % #options + 1
@@ -339,7 +361,8 @@ local function makeCheckbox(labelText, default)
     box.Text = checked and "\226\156\147" or ""
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
     box.Parent = frame
-    applyCorner(box,4)
+    applyCorner(box, 4)
+    applyStroke(box, Color3.fromRGB(70, 70, 70), 1)
 
     box.MouseButton1Click:Connect(function()
         checked = not checked
@@ -392,34 +415,35 @@ useCurrentButton.Text = "Use Current Properties as Start"
 useCurrentButton.LayoutOrder = nextOrder()
 useCurrentButton.Parent = scroll
 applyCorner(useCurrentButton,4)
+applyStroke(useCurrentButton, lighten(useCurrentButton.BackgroundColor3, 30), 1, 0.4)
 
 -- ---- Part (3D) fields --------------------------------------------------
 
 addHeader("Position", partGroup)
 local startPosBoxes = addVector3Row("Start Position", 0, 5, 0, partGroup)
-local endPosBoxes = addVector3Row("End Position", 0, 15, 0, partGroup)
+local endPosBoxes = addVector3Row("Position Offset (added to Start)", 0, 10, 0, partGroup)
 
 addHeader("Size", partGroup)
 local startSizeBoxes = addVector3Row("Start Size", 4, 1, 2, partGroup)
-local endSizeBoxes = addVector3Row("End Size", 4, 1, 2, partGroup)
+local endSizeBoxes = addVector3Row("Size Offset (added to Start)", 0, 0, 0, partGroup)
 
 addHeader("Rotation (Orientation, degrees)", partGroup)
 local startRotBoxes = addVector3Row("Start Rotation", 0, 0, 0, partGroup)
-local endRotBoxes = addVector3Row("End Rotation", 0, 90, 0, partGroup)
+local endRotBoxes = addVector3Row("Rotation Offset (added to Start)", 0, 90, 0, partGroup)
 
 -- ---- UI Element (GuiObject) fields --------------------------------------
 
 addHeader("UI Position", uiGroup)
 local startUIPosBoxes = addUDim2Row("Start Position", 0, 0, 0, 0, uiGroup)
-local endUIPosBoxes = addUDim2Row("End Position", 0, 0, 0.5, 0, uiGroup)
+local endUIPosBoxes = addUDim2Row("Position Offset (added to Start)", 0, 0, 0.5, 0, uiGroup)
 
 addHeader("UI Size", uiGroup)
 local startUISizeBoxes = addUDim2Row("Start Size", 0, 100, 0, 50, uiGroup)
-local endUISizeBoxes = addUDim2Row("End Size", 0, 150, 0, 75, uiGroup)
+local endUISizeBoxes = addUDim2Row("Size Offset (added to Start)", 0, 0, 0, 0, uiGroup)
 
 addHeader("UI Rotation (degrees)", uiGroup)
 local startUIRotBox = makeTextField("Start Rotation", 0, uiGroup)
-local endUIRotBox = makeTextField("End Rotation", 45, uiGroup)
+local endUIRotBox = makeTextField("Rotation Offset (added to Start)", 45, uiGroup)
 
 -- ---- Shared TweenInfo ----------------------------------------------------
 
@@ -443,6 +467,7 @@ generateButton.Text = "Generate Script"
 generateButton.LayoutOrder = nextOrder()
 generateButton.Parent = scroll
 applyCorner(generateButton,4)
+applyStroke(generateButton, lighten(generateButton.BackgroundColor3, 30), 1, 0.4)
 
 local outputBox = Instance.new("TextBox")
 outputBox.Size = UDim2.new(1, 0, 0, 240)
@@ -458,7 +483,9 @@ outputBox.TextWrapped = true
 outputBox.Text = ''
 outputBox.LayoutOrder = nextOrder()
 outputBox.Parent = scroll
-applyCorner(outputBox,4)
+applyCorner(outputBox, 6)
+applyStroke(outputBox, Color3.fromRGB(60, 60, 60), 1)
+applyPadding(outputBox, 8, 8, 6, 6)
 
 local previewButton = Instance.new("TextButton")
 previewButton.Size = UDim2.new(1, 0, 0, 36)
@@ -470,6 +497,7 @@ previewButton.Text = "Preview on Selected Object"
 previewButton.LayoutOrder = nextOrder()
 previewButton.Parent = scroll
 applyCorner(previewButton,4)
+applyStroke(previewButton, lighten(previewButton.BackgroundColor3, 30), 1, 0.4)
 
 local resetButton = Instance.new("TextButton")
 resetButton.Size = UDim2.new(1, 0, 0, 32)
@@ -481,6 +509,7 @@ resetButton.Text = "Reset to Original"
 resetButton.LayoutOrder = nextOrder()
 resetButton.Parent = scroll
 applyCorner(resetButton,4)
+applyStroke(resetButton, lighten(resetButton.BackgroundColor3, 30), 1, 0.4)
 
 local insertButton = Instance.new("TextButton")
 insertButton.Size = UDim2.new(1, 0, 0, 36)
@@ -492,6 +521,7 @@ insertButton.Text = "Convert to Script"
 insertButton.LayoutOrder = nextOrder()
 insertButton.Parent = scroll
 applyCorner(insertButton,4)
+applyStroke(insertButton, lighten(insertButton.BackgroundColor3, 30), 1, 0.4)
 
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, 0, 0, 20)
@@ -604,62 +634,82 @@ local function generateCode()
     local code
     if isUIMode then
         local sSX, sOX, sSY, sOY = readUDim2(startUIPosBoxes)
-        local eSX, eOX, eSY, eOY = readUDim2(endUIPosBoxes)
+        local oSX, oOX, oSY, oOY = readUDim2(endUIPosBoxes)
         local ssSX, ssOX, ssSY, ssOY = readUDim2(startUISizeBoxes)
-        local esSX, esOX, esSY, esOY = readUDim2(endUISizeBoxes)
+        local osSX, osOX, osSY, osOY = readUDim2(endUISizeBoxes)
         local startRotation = tonumber(startUIRotBox.Text) or 0
-        local endRotation = tonumber(endUIRotBox.Text) or 0
+        local rotationOffset = tonumber(endUIRotBox.Text) or 0
 
         code = string.format(
             [[local TweenService = game:GetService("TweenService")
 
 %s
 
-object.Position = UDim2.new(%s, %s, %s, %s)
-object.Size = UDim2.new(%s, %s, %s, %s)
-object.Rotation = %s
+
+local startPosition = UDim2.new(%s, %s, %s, %s)
+local startSize = UDim2.new(%s, %s, %s, %s)
+local startRotation = %s
+
+object.Position = startPosition
+object.Size = startSize
+object.Rotation = startRotation
+
+
+local sizeOffset = UDim2.new(%s, %s, %s, %s)
+local rotationOffset = %s
 
 -- TweenInfo
 local tweenInfo = TweenInfo.new(
-	%s,                       
-	Enum.EasingStyle.%s,      
-	Enum.EasingDirection.%s,  
-	%s,                       
-	%s,                       
-	%s                        
+	%s,             
+	Enum.EasingStyle.%s,
+	Enum.EasingDirection.%s,
+	%s,
+	%s,
+	%s
 )
 
+
 local goal = {
-	Position = UDim2.new(%s, %s, %s, %s),
-	Size = UDim2.new(%s, %s, %s, %s),
-	Rotation = %s,
+	Position = startPosition + positionOffset,
+	Size = startSize + sizeOffset,
+	Rotation = startRotation + rotationOffset,
 }
+
 
 local tween = TweenService:Create(object, tweenInfo, goal)
 tween:Play()
 ]],
             objectLine,
             sSX, sOX, sSY, sOY, ssSX, ssOX, ssSY, ssOY, startRotation,
-            duration, easingStyleName, easingDirectionName, repeatCount, tostring(reverses), delayTime,
-            eSX, eOX, eSY, eOY, esSX, esOX, esSY, esOY, endRotation
+            oSX, oOX, oSY, oOY, osSX, osOX, osSY, osOY, rotationOffset,
+            duration, easingStyleName, easingDirectionName, repeatCount, tostring(reverses), delayTime
         )
     else
         local sx, sy, sz = readVector3(startPosBoxes)
-        local ex, ey, ez = readVector3(endPosBoxes)
+        local ox, oy, oz = readVector3(endPosBoxes)
         local ssx, ssy, ssz = readVector3(startSizeBoxes)
-        local esx, esy, esz = readVector3(endSizeBoxes)
+        local osx, osy, osz = readVector3(endSizeBoxes)
         local srx, sry, srz = readVector3(startRotBoxes)
-        local erx, ery, erz = readVector3(endRotBoxes)
+        local orx, ory, orz = readVector3(endRotBoxes)
 
         code = string.format(
             [[local TweenService = game:GetService("TweenService")
 
 %s
 
--- Starting state (applied immediately when this script runs)
-object.Position = Vector3.new(%s, %s, %s)
-object.Size = Vector3.new(%s, %s, %s)
-object.Orientation = Vector3.new(%s, %s, %s)
+
+local startPosition = Vector3.new(%s, %s, %s)
+local startSize = Vector3.new(%s, %s, %s)
+local startRotation = Vector3.new(%s, %s, %s)
+
+object.Position = startPosition
+object.Size = startSize
+object.Orientation = startRotation
+
+
+local positionOffset = Vector3.new(%s, %s, %s)
+local sizeOffset = Vector3.new(%s, %s, %s)
+local rotationOffset = Vector3.new(%s, %s, %s)
 
 -- TweenInfo
 local tweenInfo = TweenInfo.new(
@@ -671,21 +721,20 @@ local tweenInfo = TweenInfo.new(
 	%s
 )
 
--- Goal (end) state
 local goal = {
-	Position = Vector3.new(%s, %s, %s),
-	Size = Vector3.new(%s, %s, %s),
-	Orientation = Vector3.new(%s, %s, %s),
+	Position = startPosition + positionOffset,
+	Size = startSize + sizeOffset,
+	Orientation = startRotation + rotationOffset,
 }
 
--- Create and play the tween
+
 local tween = TweenService:Create(object, tweenInfo, goal)
 tween:Play()
 ]],
             objectLine,
             sx, sy, sz, ssx, ssy, ssz, srx, sry, srz,
-            duration, easingStyleName, easingDirectionName, repeatCount, tostring(reverses), delayTime,
-            ex, ey, ez, esx, esy, esz, erx, ery, erz
+            ox, oy, oz, osx, osy, osz, orx, ory, orz,
+            duration, easingStyleName, easingDirectionName, repeatCount, tostring(reverses), delayTime
         )
     end
 
@@ -831,37 +880,49 @@ previewButton.MouseButton1Click:Connect(function()
     local goal
     if isUIMode then
         local sSX, sOX, sSY, sOY = readUDim2(startUIPosBoxes)
-        local eSX, eOX, eSY, eOY = readUDim2(endUIPosBoxes)
+        local oSX, oOX, oSY, oOY = readUDim2(endUIPosBoxes)
         local ssSX, ssOX, ssSY, ssOY = readUDim2(startUISizeBoxes)
-        local esSX, esOX, esSY, esOY = readUDim2(endUISizeBoxes)
+        local osSX, osOX, osSY, osOY = readUDim2(endUISizeBoxes)
         local startRotation = tonumber(startUIRotBox.Text) or 0
-        local endRotation = tonumber(endUIRotBox.Text) or 0
+        local rotationOffset = tonumber(endUIRotBox.Text) or 0
 
-        target.Position = UDim2.new(sSX, sOX, sSY, sOY)
-        target.Size = UDim2.new(ssSX, ssOX, ssSY, ssOY)
+        local startPosition = UDim2.new(sSX, sOX, sSY, sOY)
+        local startSize = UDim2.new(ssSX, ssOX, ssSY, ssOY)
+        local positionOffset = UDim2.new(oSX, oOX, oSY, oOY)
+        local sizeOffset = UDim2.new(osSX, osOX, osSY, osOY)
+
+        target.Position = startPosition
+        target.Size = startSize
         target.Rotation = startRotation
 
         goal = {
-            Position = UDim2.new(eSX, eOX, eSY, eOY),
-            Size = UDim2.new(esSX, esOX, esSY, esOY),
-            Rotation = endRotation,
+            Position = startPosition + positionOffset,
+            Size = startSize + sizeOffset,
+            Rotation = startRotation + rotationOffset,
         }
     else
         local sx, sy, sz = readVector3(startPosBoxes)
-        local ex, ey, ez = readVector3(endPosBoxes)
+        local ox, oy, oz = readVector3(endPosBoxes)
         local ssx, ssy, ssz = readVector3(startSizeBoxes)
-        local esx, esy, esz = readVector3(endSizeBoxes)
+        local osx, osy, osz = readVector3(endSizeBoxes)
         local srx, sry, srz = readVector3(startRotBoxes)
-        local erx, ery, erz = readVector3(endRotBoxes)
+        local orx, ory, orz = readVector3(endRotBoxes)
 
-        target.Position = Vector3.new(sx, sy, sz)
-        target.Size = Vector3.new(ssx, ssy, ssz)
-        target.Orientation = Vector3.new(srx, sry, srz)
+        local startPosition = Vector3.new(sx, sy, sz)
+        local startSize = Vector3.new(ssx, ssy, ssz)
+        local startRotation = Vector3.new(srx, sry, srz)
+        local positionOffset = Vector3.new(ox, oy, oz)
+        local sizeOffset = Vector3.new(osx, osy, osz)
+        local rotationOffset = Vector3.new(orx, ory, orz)
+
+        target.Position = startPosition
+        target.Size = startSize
+        target.Orientation = startRotation
 
         goal = {
-            Position = Vector3.new(ex, ey, ez),
-            Size = Vector3.new(esx, esy, esz),
-            Orientation = Vector3.new(erx, ery, erz),
+            Position = startPosition + positionOffset,
+            Size = startSize + sizeOffset,
+            Orientation = startRotation + rotationOffset,
         }
     end
 
