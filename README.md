@@ -20,9 +20,9 @@
 > 4. Drag **`Tweengenerator.lua`** File in to plugin folder
 ---
 ### Versions Update 🚧
-| Version | Detail                           |
-| ------- | -------------------------------- |
-| v.0.1   | First Release :white_check_mark: |
-| v.0.15  | Pre Release                      |
+| Version | Detail                               |
+| ------- | ------------------------------------ |
+| v.0.1   | First Release :white_check_mark:     |
+| v.0.15  | Lastest Release   :white_check_mark: |
 
 ---
