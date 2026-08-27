@@ -4,7 +4,8 @@
 
 ### Files
 
-> Tweengenerator.lua
+>  Zips
+>  Tweengenerator.lua
 
 ### Install Plugin
 
